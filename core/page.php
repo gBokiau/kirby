@@ -21,6 +21,7 @@ abstract class PageAbstract {
   public $kirby;
   public $site;
   public $parent;
+  public $name;
 
   protected $id;
   protected $dirname;
@@ -650,11 +651,26 @@ abstract class PageAbstract {
 
     if(isset($this->cache['content'])) {
       return $this->cache['content'];
-    } else {
-      $inventory = $this->inventory();
-      return $this->cache['content'] = new Content($this, $this->root() . DS . array_shift($inventory['content']));
+    }
+    
+    $inventory = $this->inventory();
+
+    if(count($inventory['content'])) {
+      $file = $this->root() . DS . array_shift($inventory['content']);
+      return $this->cache['content'] = new Content($this, $file);
     }
 
+    return $this->cache['content'] = false;
+  }
+  
+  public function name() {
+    if(isset($this->name)) {
+      return $this->name;
+    } elseif ($content = $this->content()) {
+      return $this->name = pathinfo($content->root, PATHINFO_FILENAME);
+	} else {
+	  return $this->name = false;		
+	}
   }
 
   /**
@@ -925,7 +941,7 @@ abstract class PageAbstract {
    */
   public function intendedTemplate() {
     if(isset($this->cache['intendedTemplate'])) return $this->cache['intendedTemplate'];
-    return $this->cache['intendedTemplate'] = $this->content()->exists() ? $this->content()->name() : 'default';
+    return $this->cache['intendedTemplate'] = $this->name()?:'default';
   }
 
   /**
