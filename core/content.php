@@ -18,6 +18,8 @@ abstract class ContentAbstract {
   public $fields = array();
   public $name   = null;
 
+  private $opened   = false;
+
   /**
    * Constructor
    */
@@ -26,33 +28,6 @@ abstract class ContentAbstract {
     $this->page = $page;
     $this->root = $root;
     $this->name = pathinfo($root, PATHINFO_FILENAME);
-
-    // stop at invalid files
-    if(empty($this->root) or !is_file($this->root) or !is_readable($this->root)) return;
-
-    // read the content file and remove the BOM
-    $this->raw = str_replace("\xEF\xBB\xBF", '', file_get_contents($this->root));
-
-    // explode all fields by the line separator
-    $fields = explode("\n----", $this->raw);
-
-    // loop through all fields and add them to the content
-    foreach($fields as $field) {
-      $pos = strpos($field, ':');
-      $key = str_replace(array('-', ' '), '_', strtolower(trim(substr($field, 0, $pos))));
-
-      // Don't add fields with empty keys
-      if(empty($key)) continue;
-
-      // add the key to the fields list
-      $this->fields[] = $key;
-
-      $this->data[$key] = new Field;
-      $this->data[$key]->page  = $this->page;
-      $this->data[$key]->key   = $key;
-      $this->data[$key]->value = trim(substr($field, $pos+1));
-    }
-
   }
 
   /**
@@ -99,6 +74,34 @@ abstract class ContentAbstract {
    * @return array
    */
   public function data() {
+  	if (!$this->opened){
+  	  $this->opened = true;
+      // stop at invalid files
+      if(empty($this->root) or !is_file($this->root) or !is_readable($this->root)) return array();
+
+      // read the content file and remove the BOM
+      $this->raw = str_replace("\xEF\xBB\xBF", '', file_get_contents($this->root));
+
+      // explode all fields by the line separator
+      $fields = explode("\n----", $this->raw);
+
+      // loop through all fields and add them to the content
+      foreach($fields as $field) {
+        $pos = strpos($field, ':');
+        $key = str_replace(array('-', ' '), '_', strtolower(trim(substr($field, 0, $pos))));
+
+        // Don't add fields with empty keys
+        if(empty($key)) continue;
+
+        // add the key to the fields list
+        $this->fields[] = $key;
+
+        $this->data[$key] = new Field;
+        $this->data[$key]->page  = $this->page;
+        $this->data[$key]->key   = $key;
+        $this->data[$key]->value = trim(substr($field, $pos+1));
+      }
+    }
     return $this->data;
   }
 
@@ -117,8 +120,10 @@ abstract class ContentAbstract {
    * @return Field
    */
   public function get($key, $arguments = null) {
-    if(isset($this->data[$key])) {
-      return $this->data[$key];
+  	$data = $this->data();
+
+    if(isset($data[$key])) {
+      return $data[$key];
     } else {
 
       // return an empty field on demand
@@ -139,7 +144,7 @@ abstract class ContentAbstract {
   public function toArray() {
     return array_map(function($item) {
       return $item->value;
-    }, $this->data);
+    }, $this->data());
   }
 
 }
