@@ -21,6 +21,7 @@ abstract class PageAbstract {
   public $kirby;
   public $site;
   public $parent;
+  public $template;
 
   protected $id;
   protected $dirname;
@@ -650,11 +651,28 @@ abstract class PageAbstract {
 
     if(isset($this->cache['content'])) {
       return $this->cache['content'];
-    } else {
-      $inventory = $this->inventory();
-      return $this->cache['content'] = new Content($this, $this->root() . DS . array_shift($inventory['content']));
     }
 
+    return $this->cache['content'] = new Content($this, $this->contentFile());
+  }
+
+  /**
+   * Returns  the root for the content file for this page
+   * or false if none
+   *
+   * @return Content
+   */
+  public function contentFile() {
+    if(isset($this->cache['inventory']['contentFile'])) {
+      return $this->cache['inventory']['contentFile'];
+    } else {
+      $inventory = $this->inventory();
+	  if(count($inventory['content'])) {
+	    return $this->cache['inventory']['contentFile'] = $this->root() . DS . array_shift($inventory['content']);
+	  } else {
+	    return $this->cache['inventory']['contentFile'] = false;
+	  }
+	}
   }
 
   /**
@@ -918,14 +936,20 @@ abstract class PageAbstract {
   }
 
   /**
-   * Returns the name of the content text file / intended template
-   * So even if there's no such template it will return the intended name.
+   * Returns the name of the intended template, by checking first if it
+   * was set manually in the `template` var, then by the name of the content
+   * file. Returns `default' if there's no such template 
    *
    * @return string
    */
   public function intendedTemplate() {
     if(isset($this->cache['intendedTemplate'])) return $this->cache['intendedTemplate'];
-    return $this->cache['intendedTemplate'] = $this->content()->exists() ? $this->content()->name() : 'default';
+    if (isset($this->template))
+      return $this->cache['intendedTemplate'] = $this->template;
+    elseif($contentFile = $this->contentFile())
+      return $this->cache['intendedTemplate'] = pathinfo($contentFile, PATHINFO_FILENAME);
+    else
+	  return $this->cache['intendedTemplate'] = 'default';
   }
 
   /**

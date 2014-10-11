@@ -16,7 +16,6 @@ abstract class ContentAbstract {
   public $raw    = null;
   public $data   = array();
   public $fields = array();
-  public $name   = null;
 
   private $opened   = false;
 
@@ -27,7 +26,6 @@ abstract class ContentAbstract {
 
     $this->page = $page;
     $this->root = $root;
-    $this->name = pathinfo($root, PATHINFO_FILENAME);
   }
 
   /**
@@ -35,17 +33,6 @@ abstract class ContentAbstract {
    */
   public function root() {
     return $this->root;
-  }
-
-  /**
-   * Returns the name of the content file
-   * without the extension. This is
-   * being used to determine the template for the page
-   *
-   * @return string
-   */
-  public function name() {
-    return $this->name;
   }
 
   /**
