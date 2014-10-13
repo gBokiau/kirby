@@ -118,7 +118,6 @@ abstract class ContentAbstract {
       $field->key   = $key;
       $field->page  = $this->page;
       $field->value = '';
-
       return $this->data[$key] = $field;
 
     }

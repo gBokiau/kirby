@@ -676,6 +676,20 @@ abstract class PageAbstract {
   }
 
   /**
+   * Returns  the name for the content file for this page
+   * or `default` if there is none
+   *
+   * @return string
+   */  
+  public function contentFileName() {
+    if (($contentFile = $this->contentFile()) && file_exists($contentFile)) {
+      return pathinfo($contentFile, PATHINFO_FILENAME);
+    } else {
+	  return 'default';
+	}
+  }
+
+  /**
    * Returns the title for this page and
    * falls back to the uid if no title exists
    *
@@ -712,13 +726,35 @@ abstract class PageAbstract {
     $checksum = sprintf('%u', crc32($this->uri()));
     return $this->cache['hash'] = base_convert($checksum, 10, 36);
   }
-
   /**
    * Magic getter for all content fields
    *
    * @return Field
    */
   public function __call($key, $arguments = null) {
+    if(!isset($this->cache['callback'])) {
+      $this->cache['callback'] = false;
+      $contentFileName = $this->contentFileName();
+      if (file_exists($callback = kirby::instance()->roots()->callbacks() . DS . $contentFileName . '.php')) {
+      	
+      	$className = 'Callback\\'.ucfirst($contentFileName);
+      	load(array(strtolower($className)=>$callback));
+		$this->cache['callback'] = new $className($this);	    
+      }
+    }
+
+    if ($this->cache['callback']) {
+	  return call_user_func_array(array($this->cache['callback'], $key), $arguments);
+    } else {
+	  return $this->get($key, $arguments);
+    }
+  }
+  /**
+   * Magic getter for all content fields
+   *
+   * @return Field
+   */
+  public function get($key, $arguments = null) {
     return isset($this->$key) ? $this->$key : $this->content()->get($key, $arguments);
   }
 
@@ -944,12 +980,11 @@ abstract class PageAbstract {
    */
   public function intendedTemplate() {
     if(isset($this->cache['intendedTemplate'])) return $this->cache['intendedTemplate'];
-    if (isset($this->template))
+    if (isset($this->template)) {
       return $this->cache['intendedTemplate'] = $this->template;
-    elseif($contentFile = $this->contentFile())
-      return $this->cache['intendedTemplate'] = pathinfo($contentFile, PATHINFO_FILENAME);
-    else
-	  return $this->cache['intendedTemplate'] = 'default';
+    } else {
+	  return $this->cache['intendedTemplate'] = $this->contentFileName();
+    }
   }
 
   /**
