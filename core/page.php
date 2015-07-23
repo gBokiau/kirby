@@ -718,13 +718,18 @@ abstract class PageAbstract {
    * @return string
    */
   public function date($format = null, $field = 'date') {
-
-    if($timestamp = strtotime($this->content()->$field())) {
-
+    // Presume that 4 digits are YYYY, not HHMM
+    $ts = date_create_from_format('Y', $this->content()->$field()); 
+    if($ts === FALSE){
+        $ts = strtotime($this->content()->$field()); 
+    } else {
+        $ts = $ts->getTimestamp(); 
+    } 
+    if((int)$ts != 0){
       if(is_null($format)) {
-        return $timestamp;
+        return $ts;
       } else {
-        return $this->kirby->options['date.handler']($format, $timestamp);
+        return $this->kirby->options['date.handler']($format, $ts);
       }
 
     }

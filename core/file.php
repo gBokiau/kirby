@@ -228,11 +228,10 @@ abstract class FileAbstract extends Media {
 
     // add the meta content
     $data['meta'] = $this->meta()->toArray();
-
     if(is_null($callback)) {
       return $data;
     } else {
-      return array_map($callback, $data);
+      return array_map($callback, array($data));
     }
 
   }
